@@ -1,0 +1,33 @@
+.feedList {
+  list-style: none;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.unfollowButton {
+  background-color: #d83e3e;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.unfollowButton:hover {
+  background-color: #ff5b5b;
+}
+
+.followButton {
+  background-color: #5a8cc1;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.followButton:hover {
+  background-color: #6e9ecf;
+}

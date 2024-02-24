@@ -1,0 +1,66 @@
+.apiContainer {
+  font-family: Arial, sans-serif;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 20px;
+  /* width: 100ch; */
+}
+
+.apiItem {
+  padding: 10px 0;
+  text-align: left;
+}
+
+.apiMethod {
+  font-weight: bold;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-right: 5px;
+  font-size: 0.75em;
+}
+
+.get {
+  background-color: #ebfbee;
+  color: #5f8a60;
+}
+
+.post {
+  background-color: #feefec;
+  color: #e0532d;
+}
+
+.delete {
+  background-color: #fdf3f5;
+  color: #d82c90;
+}
+
+.apiPath {
+  font-weight: bold;
+  color: #333;
+}
+
+.apiDescription {
+  padding-top: 5px;
+  color: #555;
+  font-size: .95em;
+}
+
+.apiAuth {
+  font-size: 0.85em;
+  color: #ffffff;
+  background-color: #5a8cc1;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 10px;
+}
+
+.apiAuthBadge {
+  display: inline-block;
+  width: 20px; 
+  height: 20px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 20px;
+  margin-left: 5px;
+  cursor: help;
+}
