@@ -1,6 +1,6 @@
 # Blog Aggregator in Go
 
-> :warning: **Announcement**:This project got too big and more complex than I anticipated. I am moving this project to a new repository. You can find the new repository [here](https://github.com/1-ashraful-islam/blog-aggregator.git).
+> :loudspeaker: **Announcement**:This project got too big and more complex than I anticipated. I moved this project from the subfolder of [boot.dev-projects](https://github.com/1-ashraful-islam/boot.dev-projects) repository.
 
 This project is a blog aggregator service in Go. It utilizes RESTful API that fetches data from remote locations and stores them in a production-ready database tools like PostgreSQL, SQLc, Goose, and pgAdmin.
 
