@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -113,8 +114,20 @@ func FetchFeedInfo(ctx context.Context, url string) (*FeedInfo, error) {
 	return feedInfo, nil
 }
 
-func fetchURL(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+func fetchURL(inputUrl string) ([]byte, error) {
+
+	// parse the url to check if it is valid
+	parsedURL, err := url.ParseRequestURI(inputUrl)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing url failed for "+inputUrl)
+	}
+
+	// check the scheme
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return nil, errors.New("Only HTTP and HTTPS protocols are supported")
+	}
+
+	resp, err := http.Get(parsedURL.String())
 	if err != nil {
 		return nil, err
 	}

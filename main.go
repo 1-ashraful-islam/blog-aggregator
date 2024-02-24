@@ -24,6 +24,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -340,8 +341,8 @@ func (cfg *apiConfig) handlerPostsGet(w http.ResponseWriter, r *http.Request, u 
 		limitQ = "10" // default to 10
 	}
 	//convert to int
-	offset, err1 := strconv.Atoi(offsetQ)
-	limit, err2 := strconv.Atoi(limitQ)
+	offset64, err1 := strconv.ParseInt(offsetQ, 10, 32)
+	limit64, err2 := strconv.ParseInt(limitQ, 10, 32)
 	if err1 != nil || err2 != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid offset or limit")
 		return
@@ -349,8 +350,8 @@ func (cfg *apiConfig) handlerPostsGet(w http.ResponseWriter, r *http.Request, u 
 
 	posts, err := cfg.DB.GetPostsByUser(r.Context(), database.GetPostsByUserParams{
 		UserID: u.ID,
-		Offset: int32(offset),
-		Limit:  int32(limit),
+		Offset: int32(offset64),
+		Limit:  int32(limit64),
 	})
 	if err != nil {
 		cfg.Logger.Printf("Failed to get posts for user %v: %+v", u.ID, err)
@@ -384,8 +385,8 @@ func (cfg *apiConfig) handlerPostsFeedIdGet(w http.ResponseWriter, r *http.Reque
 		limitQ = "10" // default to 10
 	}
 	//convert to int
-	offset, err1 := strconv.Atoi(offsetQ)
-	limit, err2 := strconv.Atoi(limitQ)
+	offset64, err1 := strconv.ParseInt(offsetQ, 10, 32)
+	limit64, err2 := strconv.ParseInt(limitQ, 10, 32)
 	if err1 != nil || err2 != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid offset or limit")
 		return
@@ -393,8 +394,8 @@ func (cfg *apiConfig) handlerPostsFeedIdGet(w http.ResponseWriter, r *http.Reque
 
 	posts, err := cfg.DB.GetPostsByFeedID(r.Context(), database.GetPostsByFeedIDParams{
 		FeedID: fID,
-		Offset: int32(offset),
-		Limit:  int32(limit),
+		Offset: int32(offset64),
+		Limit:  int32(limit64),
 	})
 	if err != nil {
 		cfg.Logger.Printf("Failed to get posts for feed id %v: %+v", fID, err)
@@ -407,7 +408,7 @@ func (cfg *apiConfig) handlerPostsFeedIdGet(w http.ResponseWriter, r *http.Reque
 func main() {
 
 	// Open the log file
-	logFile, err := os.OpenFile("logs/blog-aggregator.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile("logs/blog-aggregator.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		log.Fatalln("Failed to open log file:", err)
 	}
@@ -449,18 +450,23 @@ func main() {
 
 	// start the router with go-chi
 	r := chi.NewRouter()
+
+	// middlewares
+	r.Use(middleware.Logger)
+	r.Use(httprate.LimitByIP(20, 1*time.Minute)) // rate limit 20 requests per minute per IP
+
 	// cors
 	r.Use(middlewareCors())
 
 	r.Mount("/v1", v1Router(apiConfig))
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello world from root"))
-	})
-
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: r,
+		Addr:              ":" + port,
+		Handler:           r,
+		ReadTimeout:       5 * time.Second,  // max time to read request from the client including the body
+		WriteTimeout:      10 * time.Second, // max time to write response to the client
+		IdleTimeout:       15 * time.Second, // max time to wait for the next request for connections using TCP Keep-Alive
+		ReadHeaderTimeout: 2 * time.Second,  // max time to read request headers for preventing Slowloris attacks
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -557,5 +563,9 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		log.Printf("Failed to write JSON response: %+v", err)
+		return
+	}
+
 }
