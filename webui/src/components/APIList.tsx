@@ -1,4 +1,3 @@
-import React from "react";
 import { Tooltip } from "react-tooltip";
 import styles from "../styles/APIList.module.css";
 import { FaLock } from "react-icons/fa";

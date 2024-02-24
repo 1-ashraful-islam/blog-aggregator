@@ -32,13 +32,19 @@ const FeedForm: React.FC = () => {
         }
       );
 
+      if (response.status !== 201) {
+        throw new Error(
+          "Feed not created" + response.status + response.statusText
+        );
+      }
+
       toast.success("Feed added successfully", {
         position: "top-center",
         autoClose: 3000,
       });
 
       // Handle response here
-      console.log(response.data);
+      // console.log(response.data);
     } catch (error) {
       // Handle error here
       console.error(error);

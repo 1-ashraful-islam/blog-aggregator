@@ -22,6 +22,10 @@ export default function LoginForm() {
     navigate("/");
   };
 
+  const handleSignUp = () => {
+    navigate("/signup");
+  };
+
   const handleLoginError = () => {
     toast.error(LoginError, {
       position: "top-center",
@@ -99,7 +103,7 @@ export default function LoginForm() {
       </button>
 
       <hr style={{ margin: "16px 0" }} />
-      <button className="signup-button" type="button">
+      <button className="signup-button" type="button" onClick={handleSignUp}>
         Create new account
       </button>
     </form>

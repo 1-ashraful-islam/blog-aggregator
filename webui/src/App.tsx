@@ -6,6 +6,7 @@ import { ToastContainer } from "react-toastify";
 import ExplorePage from "./pages/ExplorePage";
 import LoginPage from "./pages/LoginPage";
 import { useAuth } from "./components/AuthContext";
+import SignUpPage from "./pages/SignUpPage";
 
 function Navigation() {
   const { isLoggedIn, handleLogout } = useAuth();
@@ -31,8 +32,10 @@ function Navigation() {
               <Link to="/login">Login / Sign Up</Link>
             </li>
           ) : (
-            <li onClick={handleLogout}>
-              <Link to="#">Logout</Link>
+            <li>
+              <Link to="#" onClick={handleLogout}>
+                Logout
+              </Link>
             </li>
           )}
         </div>
@@ -55,6 +58,7 @@ function App() {
             <Route path="/discover" element={<ExplorePage />} />
             <Route path="/api" element={<APIListPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
           </Routes>
         </main>
       </div>

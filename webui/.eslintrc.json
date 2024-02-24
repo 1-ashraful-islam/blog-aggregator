@@ -1,0 +1,38 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react/jsx-runtime",
+    "plugin:security/recommended-legacy",
+    "plugin:jsx-a11y/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "overrides": [
+    {
+      "env": {
+        "node": true
+      },
+      "files": [".eslintrc.{js,cjs,ts,mjs,jsx,tsx}"],
+      "parserOptions": {
+        "sourceType": "script"
+      }
+    }
+  ],
+  "plugins": ["@typescript-eslint", "react", "security", "jsx-a11y"],
+  "rules": {},
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}
