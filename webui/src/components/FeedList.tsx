@@ -29,6 +29,9 @@ const fetchFeeds = async (
     const followsUrl = `http://localhost:8080/v1/feed_follows`;
     const headers = { Authorization: `Bearer ${apiKey}` };
     const followedFeedsResponse = await fetch(followsUrl, { headers });
+    if (!followedFeedsResponse.ok) {
+      throw new Error(`HTTP error! status: ${followedFeedsResponse.status}`);
+    }
     const followedFeeds: Feed[] = await followedFeedsResponse.json();
 
     if (!showAll) {
@@ -36,6 +39,9 @@ const fetchFeeds = async (
     } else {
       const allFeedsUrl = `http://localhost:8080/v1/feeds`;
       const allFeedsResponse = await fetch(allFeedsUrl, { headers });
+      if (!allFeedsResponse.ok) {
+        throw new Error(`HTTP error! status: ${allFeedsResponse.status}`);
+      }
       const allFeeds: Feed[] = await allFeedsResponse.json();
       const followedIds = new Set(followedFeeds.map((feed) => feed.id));
       return allFeeds.map((feed) => ({
@@ -46,6 +52,9 @@ const fetchFeeds = async (
   } else {
     const allFeedsUrl = `http://localhost:8080/v1/feeds`;
     const allFeedsResponse = await fetch(allFeedsUrl);
+    if (!allFeedsResponse.ok) {
+      throw new Error(`HTTP error! status: ${allFeedsResponse.status}`);
+    }
     const allFeeds: Feed[] = await allFeedsResponse.json();
     return allFeeds.map((feed) => ({ ...feed, follow: false }));
   }

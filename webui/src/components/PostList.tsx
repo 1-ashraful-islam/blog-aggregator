@@ -36,6 +36,7 @@ const PostList: React.FC<{
 
   useEffect(() => {
     const fetchPosts = async () => {
+      if (isFetching) return;
       setIsFetching(true);
       try {
         const url = new URL(`http://localhost:8080/v1/posts/${feed_id}`);
@@ -65,7 +66,7 @@ const PostList: React.FC<{
               // Return the previous posts if the first new post is not unique
               return prevPosts;
             });
-            setHasMore(newPosts.length > 0);
+            setHasMore(newPosts.length >= parseInt(initialLimit));
           } else {
             setHasMore(false);
           }
@@ -79,7 +80,7 @@ const PostList: React.FC<{
     };
 
     fetchPosts();
-  }, [apiKey, feed_id, initialLimit, isLoggedIn, offset]);
+  }, [apiKey, feed_id, initialLimit, isLoggedIn, offset, isFetching]);
 
   const getBaseUrl = (url: string) => {
     const urlObject = new URL(url);

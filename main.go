@@ -75,6 +75,14 @@ func (cfg *apiConfig) ScrapeFeeds(ctx context.Context, t time.Duration, n int32)
 
 }
 
+func (cfg *apiConfig) ScrapeNewFeeds(ctx context.Context, feed database.Feed) {
+	//scrape a single feed when a new feed is added
+	if err := scrapper.ScrapeFeed(ctx, cfg.DB, feed); err != nil {
+		cfg.Logger.Printf("Failed to scrape feed: %+v", err)
+	}
+	cfg.Logger.Printf("Scraped single new feed: %v", feed.Url)
+}
+
 type authedHandler func(w http.ResponseWriter, r *http.Request, u database.User)
 
 func (cfg *apiConfig) middlewareAuth(handler authedHandler) http.HandlerFunc {
@@ -223,12 +231,16 @@ func (cfg *apiConfig) handlerFeedsPost(w http.ResponseWriter, r *http.Request, u
 	}
 
 	respondWithJSON(w, http.StatusCreated, result)
+	//scrape the feed
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cfg.ScrapeNewFeeds(ctx, feed)
 }
 
 func (cfg *apiConfig) handlerFeedsGet() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		feeds, err := cfg.DB.GetFeeds(r.Context())
-		if err != nil {
+		if err != nil || len(feeds) == 0 {
 			cfg.Logger.Printf("Failed to get feeds: %+v", err)
 			respondWithError(w, http.StatusInternalServerError, "Failed to get feeds")
 			return
@@ -353,11 +365,12 @@ func (cfg *apiConfig) handlerPostsGet(w http.ResponseWriter, r *http.Request, u 
 		Offset: int32(offset64),
 		Limit:  int32(limit64),
 	})
-	if err != nil {
+	if err != nil || len(posts) == 0 {
 		cfg.Logger.Printf("Failed to get posts for user %v: %+v", u.ID, err)
 		respondWithError(w, http.StatusInternalServerError, "Failed to get posts")
 		return
 	}
+
 	respondWithJSON(w, http.StatusOK, posts)
 }
 
@@ -397,11 +410,12 @@ func (cfg *apiConfig) handlerPostsFeedIdGet(w http.ResponseWriter, r *http.Reque
 		Offset: int32(offset64),
 		Limit:  int32(limit64),
 	})
-	if err != nil {
+	if err != nil || len(posts) == 0 {
 		cfg.Logger.Printf("Failed to get posts for feed id %v: %+v", fID, err)
 		respondWithError(w, http.StatusInternalServerError, "Failed to get posts")
 		return
 	}
+
 	respondWithJSON(w, http.StatusOK, posts)
 }
 
@@ -453,10 +467,10 @@ func main() {
 
 	// middlewares
 	r.Use(middleware.Logger)
-	r.Use(httprate.LimitByIP(20, 1*time.Minute)) // rate limit 20 requests per minute per IP
-
 	// cors
 	r.Use(middlewareCors())
+	// rate limiter : rate limit 40 requests per minute per IP
+	r.Use(httprate.LimitByIP(40, 1*time.Minute))
 
 	r.Mount("/v1", v1Router(apiConfig))
 
