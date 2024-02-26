@@ -153,7 +153,7 @@ const FeedList: React.FC<{ showAll: boolean }> = ({ showAll }) => {
           </div>
         </li>
         {feeds
-          .sort((a, b) => (a.follow === false ? -1 : 1))
+          .sort((a) => (a.follow === false ? -1 : 1))
           .map((feed) => (
             <li key={feed.id}>
               <h3>

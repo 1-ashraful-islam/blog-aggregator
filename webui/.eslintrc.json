@@ -9,10 +9,14 @@
     "plugin:react/recommended",
     "plugin:react/jsx-runtime",
     "plugin:security/recommended-legacy",
-    "plugin:jsx-a11y/recommended"
+    "plugin:jsx-a11y/recommended",
+    "plugin:import/typescript"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
+    "ecmaVersion": "latest",
+    "project": "./tsconfig.json",
+    "sourceType": "module",
     "ecmaFeatures": {
       "jsx": true
     }

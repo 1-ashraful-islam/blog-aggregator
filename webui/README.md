@@ -39,6 +39,14 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
+### `npm run check-updates`
+
+This command will check for updates of the npm packages and list them in the terminal. It uses `npm-check-updates` package to check for updates.
+
+### `npm run update-deps`
+
+This command will update the npm packages to the latest version. It uses `npm-check-updates` package to update the packages.
+
 ## Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
