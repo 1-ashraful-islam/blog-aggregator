@@ -1,6 +1,7 @@
 .env
 blogAgg
+bootstrap
 logs/*.log
 
-
+*.zip
 

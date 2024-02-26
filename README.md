@@ -65,3 +65,17 @@ docker-compose build go-tools
 ## Deployment to AWS Lambda
 
 [Go Lambda Instructions](https://docs.aws.amazon.com/lambda/latest/dg/lambda-golang.html)
+[AWS CLI V2 SSO Sign on Instructions](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html)
+
+Compile and deploy to AWS Lambda using the following steps:
+
+1. (optional if configured already) Install AWS CLI v2
+2. (optional if configured already) Configure AWS CLI v2 with SSO
+   ```aws configure sso```
+3. (optional if configured already) `aws sso login --profile <profile-name>`
+4. Make sure env variables are set in `.env` file
+5. Run the following command:
+
+```bash
+sh aws-lambda-deploy.sh
+```
