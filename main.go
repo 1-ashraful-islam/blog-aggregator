@@ -409,17 +409,25 @@ func (cfg *apiConfig) handlerPostsFeedIdGet(w http.ResponseWriter, r *http.Reque
 
 func main() {
 
-	// Open the log file
-	logFile, err := os.OpenFile("logs/blog-aggregator.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-	if err != nil {
-		log.Fatalln("Failed to open log file:", err)
+	var logger *log.Logger
+	var err error
+	var dbQueries *database.Queries
+
+	if runningInLambda() {
+		logger = log.New(os.Stdout, "", log.Lshortfile|log.LstdFlags)
+	} else {
+		// Open the log file
+		logFile, err := os.OpenFile("logs/blog-aggregator.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			log.Fatalln("Failed to open log file:", err)
+		}
+
+		// Create a multi writer
+		multiWriter := io.MultiWriter(logFile, os.Stdout)
+
+		// Create the logger
+		logger = log.New(multiWriter, "", log.Lshortfile|log.LstdFlags)
 	}
-
-	// Create a multi writer
-	multiWriter := io.MultiWriter(logFile, os.Stdout)
-
-	// Create the logger
-	logger := log.New(multiWriter, "", log.Lshortfile|log.LstdFlags)
 
 	// Load .env file
 	if err := godotenv.Load(".env"); err != nil {
@@ -439,7 +447,7 @@ func main() {
 		logger.Fatalf(errors.Wrap(err, "could not ping the database").Error())
 	}
 
-	dbQueries := database.New(db)
+	dbQueries = database.New(db)
 
 	// Create a new instance of the API config
 	apiConfig := &apiConfig{
