@@ -12,4 +12,8 @@ require (
 	github.com/pkg/errors v0.9.1
 )
 
-require github.com/cespare/xxhash/v2 v2.1.2 // indirect
+require (
+	github.com/aws/aws-lambda-go v1.46.0 // indirect
+	github.com/awslabs/aws-lambda-go-api-proxy v0.16.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+)

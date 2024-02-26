@@ -61,3 +61,7 @@ Remember to rebuild your Docker Compose services if you make changes to the Dock
 ```bash
 docker-compose build go-tools
 ```
+
+## Deployment to AWS Lambda
+
+[Go Lambda Instructions](https://docs.aws.amazon.com/lambda/latest/dg/lambda-golang.html)

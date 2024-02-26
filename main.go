@@ -18,6 +18,8 @@ import (
 
 	"github.com/1-ashraful-islam/blog-aggregator/internal/database"
 	"github.com/1-ashraful-islam/blog-aggregator/internal/scrapper"
+	"github.com/aws/aws-lambda-go/lambda"
+	chiadapter "github.com/awslabs/aws-lambda-go-api-proxy/chi"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
@@ -460,45 +462,56 @@ func main() {
 
 	r.Mount("/v1", v1Router(apiConfig))
 
-	srv := &http.Server{
-		Addr:              ":" + port,
-		Handler:           r,
-		ReadTimeout:       5 * time.Second,  // max time to read request from the client including the body
-		WriteTimeout:      10 * time.Second, // max time to write response to the client
-		IdleTimeout:       15 * time.Second, // max time to wait for the next request for connections using TCP Keep-Alive
-		ReadHeaderTimeout: 2 * time.Second,  // max time to read request headers for preventing Slowloris attacks
-	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	// test the scrapper
-	scraperIntervalStr := os.Getenv("SCRAPER_INTERVAL")
-	scraperInterval, err := time.ParseDuration(scraperIntervalStr)
-	if err != nil {
-		logger.Printf("Failed to parse SCRAPE_INTERVAL: %v. Default time of 10 minutes used", err)
-		scraperInterval = 10 * time.Minute
-	}
-	go apiConfig.ScrapeFeeds(ctx, scraperInterval, 10)
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("listen and Serve returned err: %v", err)
+	if runningInLambda() {
+		// Start the lambda handler
+		chiLamda := chiadapter.New(r)
+		lambda.Start(chiLamda.ProxyWithContext)
+	} else {
+		srv := &http.Server{
+			Addr:              ":" + port,
+			Handler:           r,
+			ReadTimeout:       5 * time.Second,  // max time to read request from the client including the body
+			WriteTimeout:      10 * time.Second, // max time to write response to the client
+			IdleTimeout:       15 * time.Second, // max time to wait for the next request for connections using TCP Keep-Alive
+			ReadHeaderTimeout: 2 * time.Second,  // max time to read request headers for preventing Slowloris attacks
 		}
-	}()
 
-	<-ctx.Done()
-	log.Printf("Got interrupt signal: %s, shutting down...", ctx.Err())
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer stop()
 
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+		// start the scraper
+		scraperIntervalStr := os.Getenv("SCRAPER_INTERVAL")
+		scraperInterval, err := time.ParseDuration(scraperIntervalStr)
+		if err != nil {
+			logger.Printf("Failed to parse SCRAPE_INTERVAL: %v. Default time of 10 minutes used", err)
+			scraperInterval = 10 * time.Minute
+		}
+		go apiConfig.ScrapeFeeds(ctx, scraperInterval, 10)
 
-	if err := srv.Shutdown(ctxShutDown); err != nil {
-		logger.Fatalf("HTTP server shutdown failed: %v", err)
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Fatalf("listen and Serve returned err: %v", err)
+			}
+		}()
+
+		<-ctx.Done()
+		log.Printf("Got interrupt signal: %s, shutting down...", ctx.Err())
+
+		ctxShutDown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctxShutDown); err != nil {
+			logger.Fatalf("HTTP server shutdown failed: %v", err)
+		}
+
+		log.Println("HTTP server shutdown complete")
+
 	}
+}
 
-	log.Println("HTTP server shutdown complete")
-
+func runningInLambda() bool {
+	_, runningInLambda := os.LookupEnv("AWS_LAMBDA_RUNTIME_API")
+	return runningInLambda
 }
 
 func middlewareCors() func(next http.Handler) http.Handler {
