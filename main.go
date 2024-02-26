@@ -39,37 +39,42 @@ func (cfg *apiConfig) ScrapeFeeds(ctx context.Context, t time.Duration, n int32)
 	ticker := time.NewTicker(t)
 	defer ticker.Stop()
 
+	scrapeAction := func() {
+		feeds, err := cfg.DB.GetNextFeedsToFetch(ctx, n)
+		if err != nil {
+			cfg.Logger.Printf("Failed to get feeds to fetch: %+v", err)
+			return
+		}
+		if len(feeds) == 0 {
+			log.Println("No feeds to fetch. Sleeping...")
+			return
+		}
+
+		var wg sync.WaitGroup
+		for _, feed := range feeds {
+			wg.Add(1)
+			go func(feed database.Feed) {
+				defer wg.Done()
+
+				err := scrapper.ScrapeFeed(ctx, cfg.DB, feed)
+				if err != nil {
+					cfg.Logger.Printf("Failed to scrape feed: %+v", err)
+				}
+			}(feed)
+		}
+		wg.Wait()
+	}
+
+	// Trigger at the start
+	scrapeAction()
+
 	for {
 		select {
 		case <-ctx.Done():
 			log.Printf("Returning from ScrapeFeeds")
 			return
 		case <-ticker.C:
-			feeds, err := cfg.DB.GetNextFeedsToFetch(ctx, n)
-			if err != nil {
-				cfg.Logger.Printf("Failed to get feeds to fetch: %+v", err)
-				continue
-			}
-			if len(feeds) == 0 {
-				log.Println("No feeds to fetch. Sleeping...")
-				continue
-			}
-
-			var wg sync.WaitGroup
-			for _, feed := range feeds {
-				wg.Add(1)
-				go func(feed database.Feed) {
-					defer wg.Done()
-
-					err := scrapper.ScrapeFeed(ctx, cfg.DB, feed)
-					if err != nil {
-						cfg.Logger.Printf("Failed to scrape feed: %+v", err)
-					}
-				}(feed)
-
-			}
-			wg.Wait()
-
+			scrapeAction()
 		}
 	}
 
