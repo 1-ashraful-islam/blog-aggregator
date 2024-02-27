@@ -28,7 +28,7 @@ const fetchFeeds = async (
   if (isLoggedIn) {
     const followsUrl = `http://localhost:8080/v1/feed_follows`;
     const headers = { Authorization: `Bearer ${apiKey}` };
-    const followedFeedsResponse = await fetch(followsUrl, { headers });
+    const followedFeedsResponse = await fetchWithRetry(followsUrl, { headers });
     if (!followedFeedsResponse.ok) {
       throw new Error(`HTTP error! status: ${followedFeedsResponse.status}`);
     }
@@ -38,7 +38,7 @@ const fetchFeeds = async (
       return followedFeeds.map((feed) => ({ ...feed, follow: true }));
     } else {
       const allFeedsUrl = `http://localhost:8080/v1/feeds`;
-      const allFeedsResponse = await fetch(allFeedsUrl, { headers });
+      const allFeedsResponse = await fetchWithRetry(allFeedsUrl, { headers });
       if (!allFeedsResponse.ok) {
         throw new Error(`HTTP error! status: ${allFeedsResponse.status}`);
       }
@@ -51,13 +51,33 @@ const fetchFeeds = async (
     }
   } else {
     const allFeedsUrl = `http://localhost:8080/v1/feeds`;
-    const allFeedsResponse = await fetch(allFeedsUrl);
+    const allFeedsResponse = await fetchWithRetry(allFeedsUrl);
     if (!allFeedsResponse.ok) {
       throw new Error(`HTTP error! status: ${allFeedsResponse.status}`);
     }
     const allFeeds: Feed[] = await allFeedsResponse.json();
     return allFeeds.map((feed) => ({ ...feed, follow: false }));
   }
+};
+
+const fetchWithRetry = async (
+  url: string,
+  options?: RequestInit,
+  maxRetries = 3,
+  retryDelay = 2000
+): Promise<Response> => {
+  let retries = 0;
+  while (retries < maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      console.error("Error fetching data", error);
+      retries++;
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
+  throw new Error(`Failed to fetch data after ${maxRetries} retries`);
 };
 
 const FeedList: React.FC<{ showAll: boolean }> = ({ showAll }) => {
@@ -190,7 +210,7 @@ const FeedList: React.FC<{ showAll: boolean }> = ({ showAll }) => {
               <PostList
                 feed_id={feed.id}
                 initialOffset={`${0}`}
-                initialLimit={`${5}`}
+                initialLimit={`${10}`}
               />
             </li>
           ))}

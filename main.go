@@ -474,8 +474,8 @@ func main() {
 	r.Use(middleware.Logger)
 	// cors
 	r.Use(middlewareCors())
-	// rate limiter : rate limit 40 requests per minute per IP
-	r.Use(httprate.LimitByIP(40, 1*time.Minute))
+	// rate limiter : rate limit 40 requests per second per IP
+	r.Use(httprate.LimitByIP(40, 1*time.Second))
 
 	r.Mount("/v1", v1Router(apiConfig))
 

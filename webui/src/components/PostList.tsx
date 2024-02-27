@@ -18,6 +18,11 @@ const PostList: React.FC<{
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        // console.log(
+        //   `Is intersecting: ${entries[0].isIntersecting}, ratio: ${entries[0].intersectionRatio}`,
+        //   hasMore,
+        //   isFetching
+        // );
         if (entries[0].isIntersecting && hasMore && !isFetching) {
           setOffset((prevOffset) =>
             (parseInt(prevOffset) + parseInt(initialLimit)).toString()
@@ -31,7 +36,9 @@ const PostList: React.FC<{
       observer.observe(loaderRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [hasMore, isFetching, initialLimit]);
 
   useEffect(() => {
@@ -42,7 +49,7 @@ const PostList: React.FC<{
         const url = new URL(`http://localhost:8080/v1/posts/${feed_id}`);
         const params = new URLSearchParams({ offset, limit: initialLimit });
         url.search = params.toString();
-        const response = await fetch(url.toString(), {
+        const response = await fetchWithRetry(url.toString(), {
           headers: isLoggedIn ? { Authorization: `Bearer ${apiKey}` } : {},
         });
         if (response.ok) {
@@ -70,17 +77,38 @@ const PostList: React.FC<{
           } else {
             setHasMore(false);
           }
-
-          setIsFetching(false);
         }
       } catch (error) {
         setFetchError("Error fetching / refreshing Posts");
-        setIsFetching(false);
       }
+      setIsFetching(false);
     };
 
     fetchPosts();
-  }, [apiKey, feed_id, initialLimit, isLoggedIn, offset, isFetching]);
+  }, [apiKey, feed_id, initialLimit, isLoggedIn, offset]);
+
+  const fetchWithRetry = async (
+    url: string,
+    options?: RequestInit,
+    maxRetries = 3,
+    retryDelay = 2000
+  ): Promise<Response> => {
+    let retries = 0;
+    while (retries < maxRetries) {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response;
+      } catch (error) {
+        console.error("Error fetching data", error);
+        retries++;
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
+    throw new Error(`Failed to fetch data after ${maxRetries} retries`);
+  };
 
   const getBaseUrl = (url: string) => {
     const urlObject = new URL(url);
@@ -100,11 +128,14 @@ const PostList: React.FC<{
             />
           </li>
         ))}
-        {hasMore && !isFetching && (
-          <li ref={loaderRef}>Loading more posts...</li>
-        )}
-        {isFetching && <li>Loading...</li>}
-        {!hasMore && <li>No more posts to Fetch</li>}
+
+        <li ref={loaderRef} className="loader-visible">
+          {isFetching && hasMore ? (
+            <p>Loading more posts...</p>
+          ) : (
+            <p className="hasNoMore">No more posts to Fetch</p>
+          )}
+        </li>
       </ul>
     </>
   );

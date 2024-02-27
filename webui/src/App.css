@@ -108,3 +108,14 @@
   border-width: 0;
   color: #fff;
 }
+
+
+.loader-visible{
+  min-width: 200px;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-weight: bold;
+  font-size: 2em;
+  text-align: center;
+}
